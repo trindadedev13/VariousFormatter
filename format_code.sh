@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Formatting script made by Aquiles Trindade (trindadedev) with love ❤.
+# Copyright 2025 Aquiles Trindade (trindadedev).
+# Licensed by Apache 2.0 License.
 
 # Variables
 CACHE_DIR="$HOME/.cache/trindadedev/formatters"
@@ -18,19 +19,44 @@ XML_FORMATTER_URL="https://github.com/teixeira0x/android-xml-formatter/releases/
 mkdir -p "$CACHE_DIR"
 
 # --- Java Formatter ---
-if [ ! -f "$JAVA_FORMATTER_DIR" ]; then
-  echo "Downloading Google Java Formatter..."
-  wget -q "$JAVA_FORMATTER_URL" -O "$JAVA_FORMATTER_DIR"
-fi
+read -p "You want to format all Java Classes of This directory and subdirectories? (Y/N): " javaAnswer
 
-echo "Formatting Java files..."
-find ../ -name "*.java" -exec java -jar "$JAVA_FORMATTER_DIR" --aosp --replace {} +
+case "$javaAnswer" in
+  [Yy]* )
+    if [ ! -f "$JAVA_FORMATTER_DIR" ]; then
+      echo "Downloading Google Java Formatter..."
+      wget -q "$JAVA_FORMATTER_URL" -O "$JAVA_FORMATTER_DIR"
+    fi
+
+    echo "Formatting Java files..."
+    find ./ -name "*.java" -exec java -jar "$JAVA_FORMATTER_DIR" --aosp --replace {} +
+
+    ;;
+  [Nn]* )
+    ;;
+  * )
+    echo "Invalid option. Exiting."
+    exit 1
+    ;;
+esac
 
 # --- XML Formatter ---
-if [ ! -f "$XML_FORMATTER_DIR" ]; then
-  echo "Downloading Android XML Formatter..."
-  wget -q "$XML_FORMATTER_URL" -O "$XML_FORMATTER_DIR"
-fi
+read -p "You want to format all XML Files of This directory and subdirectories? (Y/N): " xmlAnswer
+case "$xmlAnswer" in
+  [Yy]* )
+    if [ ! -f "$XML_FORMATTER_DIR" ]; then
+      echo "Downloading Android XML Formatter..."
+      wget -q "$XML_FORMATTER_URL" -O "$XML_FORMATTER_DIR"
+    fi
 
-echo "Formatting XML Files...."
-find ../ -name "*.xml" -exec java -jar "$XML_FORMATTER_DIR" --indention 4 --attribute-indention 4 {} \;
+    echo "Formatting XML Files...."
+    find ./ -name "*.xml" -exec java -jar "$XML_FORMATTER_DIR" --indention 4 --attribute-indention 4 {} \;
+
+  ;;
+  [Nn]* )
+  ;;
+  * )
+    echo "Invalid option. Exiting."
+    exit 1
+    ;;
+esac
