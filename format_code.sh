@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Copyright 2025 Aquiles Trindade (trindadedev).
-# Licensed by Apache 2.0 License.
+# Licensed under the Apache 2.0 License.
 
 # Variables
 
-# Dir where files to be format is located.
+# Directory where files to be formatted are located
 TO_FORMAT_DIR="./"
 
 CACHE_DIR="$HOME/.cache/trindadedev/formatters"
@@ -27,69 +27,82 @@ KOTLIN_FORMATTER_URL="https://github.com/facebook/ktfmt/releases/download/v$KOTL
 
 mkdir -p "$CACHE_DIR"
 
-# --- Java Formatter ---
-read -p "You want to format all Java Classes of This directory and subdirectories? (Y/N): " javaAnswer
+# download a formatter if not exists
+download_formatter_if_not_present() {
+  local formatter_dir="$1"
+  local formatter_url="$2"
+  local formatter_name="$3"
 
-case "$javaAnswer" in
-  [Yy]* )
-    if [ ! -f "$JAVA_FORMATTER_DIR" ]; then
-      echo "Downloading Google Java Formatter..."
-      wget -q "$JAVA_FORMATTER_URL" -O "$JAVA_FORMATTER_DIR"
-    fi
+  if [ ! -f "$formatter_dir" ]; then
+    echo "Downloading $formatter_name..."
+    wget -q "$formatter_url" -O "$formatter_dir"
+  fi
+}
 
-    echo "Formatting Java files..."
-    find "$TO_FORMAT_DIR" -name "*.java" -exec java -jar "$JAVA_FORMATTER_DIR" --replace {} +
+# format Java files
+format_java() {
+  read -p "Do you want to format all Java files in this directory and subdirectories? (Y/N): " answer
+  case "$answer" in
+    [Yy]* )
+      download_formatter_if_not_present "$JAVA_FORMATTER_DIR" "$JAVA_FORMATTER_URL" "Google Java Formatter"
+      echo "Formatting Java files..."
+      find "$TO_FORMAT_DIR" -name "*.java" -exec java -jar "$JAVA_FORMATTER_DIR" --replace {} +
+      ;;
+    [Nn]* ) ;;
+    * ) echo "Invalid option. Exiting."; exit 1 ;;
+  esac
+}
 
-    ;;
-  [Nn]* )
-    ;;
-  * )
-    echo "Invalid option. Exiting."
+# format XML files
+format_xml() {
+  read -p "Do you want to format all XML files in this directory and subdirectories? (Y/N): " answer
+  case "$answer" in
+    [Yy]* )
+      download_formatter_if_not_present "$XML_FORMATTER_DIR" "$XML_FORMATTER_URL" "Android XML Formatter"
+      echo "Formatting XML files..."
+      find "$TO_FORMAT_DIR" -name "*.xml" -exec java -jar "$XML_FORMATTER_DIR" --indention 4 --attribute-indention 4 {} \;
+      ;;
+    [Nn]* ) ;;
+    * ) echo "Invalid option. Exiting."; exit 1 ;;
+  esac
+}
+
+# format Kotlin files
+format_kotlin() {
+  read -p "Do you want to format all Kotlin files in this directory and subdirectories? (Y/N): " answer
+  case "$answer" in
+    [Yy]* )
+      download_formatter_if_not_present "$KOTLIN_FORMATTER_DIR" "$KOTLIN_FORMATTER_URL" "Facebook KtFmt"
+      echo "Formatting Kotlin files..."
+      find "$TO_FORMAT_DIR" -name "*.kt" -exec java -jar "$KOTLIN_FORMATTER_DIR" --google-style {} +
+      ;;
+    [Nn]* ) ;;
+    * ) echo "Invalid option. Exiting."; exit 1 ;;
+  esac
+}
+
+# download a package verifing the environment
+download_package() {
+  local package = "$1"
+  if command -v pkg &> /dev/null; then
+    pkg update -y && pkg install -y $package
+  elif command -v apt &> /dev/null; then
+    sudo apt update && sudo apt install -y $package
+  elif command -v pacman &> /dev/null; then
+    sudo pacman -Syu --noconfirm $package
+  elif command -v dnf &> /dev/null; then
+    sudo dnf install -y $package
+  elif command -v yum &> /dev/null; then
+    sudo yum install -y $package
+  elif command -v brew &> /dev/null; then
+    brew install $package
+  else
+    echo "Not supported package manager"
     exit 1
-    ;;
-esac
+  fi
+}
 
-# --- XML Formatter ---
-read -p "You want to format all XML Files of This directory and subdirectories? (Y/N): " xmlAnswer
-
-case "$xmlAnswer" in
-  [Yy]* )
-    if [ ! -f "$XML_FORMATTER_DIR" ]; then
-      echo "Downloading Android XML Formatter..."
-      wget -q "$XML_FORMATTER_URL" -O "$XML_FORMATTER_DIR"
-    fi
-
-    echo "Formatting XML Files...."
-    find "$TO_FORMAT_DIR" -name "*.xml" -exec java -jar "$XML_FORMATTER_DIR" --indention 4 --attribute-indention 4 {} \;
-
-    ;;
-  [Nn]* )
-    ;;
-  * )
-    echo "Invalid option. Exiting."
-    exit 1
-    ;;
-esac
-
-
-# --- Kotlin Formatter ---
-read -p "You want to format all Kotlin Files of This directory and subdirectories? (Y/N): " kotlinAnswer
-
-case "$kotlinAnswer" in
-  [Yy]* )
-    if [ ! -f "$KOTLIN_FORMATTER_DIR" ]; then
-      echo "Downloading Facebook KtFmt..."
-      wget -q "$KOTLIN_FORMATTER_URL" -O "$KOTLIN_FORMATTER_DIR"
-    fi
-
-    echo "Formatting Kotlin files..."
-    find "$TO_FORMAT_DIR" -name "*.kt" -exec java -jar "$KOTLIN_FORMATTER_DIR" --google-style {} +
-
-    ;;
-  [Nn]* )
-    ;;
-  * )
-    echo "Invalid option. Exiting."
-    exit 1
-    ;;
-esac
+# call all methods for formatter
+format_java
+format_xml
+format_kotlin
